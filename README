@@ -1,0 +1,16 @@
+LINGUAGEM UTILIZADA: Python
+IDE: Pycharm (em ambos os hardwares)
+HARDWARE: Desenvolido simultaneamente em 2 computadores, com a sincronização entre hardwares feita através de repositório no github
+(Utilizei a maior parte do tempo o hardware 2 estado grande parte do software desenhado para este)
+HARDWARE 1: Computador windows com: -Ryzen 3600x com 6 cores e 12 threads a uma base clock de 3.8GHz
+                                    -RTX 2060 com 6GB GDDR6
+                                    -16GB de RAM DDR4 a 3200mhz
+                                    -SSD Crucial MX500 de 500GB
+
+HARDWARE 2: Computador Mac com: -2,3 GHz Dual-Core Intel Core i5
+                                -Intel Iris Plus Graphics 640 1536 MB
+                                -8 GB 2133 MHz LPDDR3
+                                -Disco SSD de 256GB
+                                
+                                Relatório segue em formato pdf na mesma pasta do repositório github
+                                link repositório: https://github.com/cdsjg-iscteiul/ficha2
