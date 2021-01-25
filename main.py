@@ -3,6 +3,12 @@ from functools import partial
 import time
 import matplotlib.pyplot as plt
 
+n_figure = 1
+
+seed = time.time()
+print(seed)
+rand.seed(1611491668.914867)
+
 
 # Rule: number of 10 in the pattern
 # higher number of points in:
@@ -13,6 +19,7 @@ import matplotlib.pyplot as plt
 # 128: 64
 # 256: 128
 
+# PERGUNTA 1
 def generate(x):
     string = ""
     for i in range(x):
@@ -22,15 +29,7 @@ def generate(x):
     return string
 
 
-def generate_random(x):
-    string = ""
-    for i in range(x):
-        tmp = str(rand.randint(0, 1))
-        string += tmp
-
-    return string
-
-
+# PERGUNTA 2 - INICIO
 def guess(pattern, x):
     pattern_guess = ""
     number_tries = 0
@@ -40,72 +39,111 @@ def guess(pattern, x):
         for i in range(x):
             tmp = str(rand.randint(0, 1))
             pattern_guess += tmp
-
-        (pattern, pattern_guess)
-        evaluation(pattern, pattern_guess)
         number_tries += 1
 
     return number_tries
 
 
-def start():
-    number_8 = 0
-    number_16 = 0
-    number_32 = 0
-    number_64 = 0
-    number_128 = 0
-    number_256 = 0
-    all_tents = []
+def new_start():
+    bits = [8, 16]
 
     number_tent_8 = []
-    for x in range(30):
-        # 8 bits
-        size8 = generate(8)
-        number_tries8 = guess(size8, 8)
-        number_tent_8.append(number_tries8)
-        number_8 = (number_8 + number_tries8) / 30
-    all_tents.append(number_tent_8)
-    print("DONE 8")
-    print("TENTATIVAS MÉDIAS PARA 8 BITS:  " + str(number_8))
-    make_graph(number_tent_8)
     number_tent_16 = []
-    for x in range(30):
-        # 16 bits
-        size16 = generate(16)
-        number_tries16 = guess(size16, 16)
-        number_tent_16.append(number_tries16)
-        number_16 = (number_16 + number_tries16) / 30
-    all_tents.append(number_tent_16)
-    print("DONE 16")
-    print("TENTATIVAS MÉDIAS PARA 16 BITS:  " + str(number_16))
 
-    make_graph(number_tent_16)
+    times_8 = []
+    times_16 = []
+
+    for t in range(30):
+
+        for x in bits:
+            start_time = time.time()
+            size = generate(x)
+            number_tries = guess(size, x)
+            if x == 8:
+                number_tent_8.append(number_tries)
+                time_8 = (time.time() - start_time)
+                times_8.append(time_8)
+
+            if x == 16:
+                number_tent_16.append(number_tries)
+                time_16 = (time.time() - start_time)
+                times_16.append(time_16)
+
+    make_graph([number_tent_8, number_tent_16], [times_8, times_16], bits)
 
 
-def make_graph(plot):
-    fig = plt.figure(1, figsize=(9, 6))
+def make_graph(plot1, plot2, bits):
+    global n_figure
+    fig, ax1 = plt.subplots(1, 1)
+    ax1.boxplot(plot1, labels=bits, vert=True)
+    ax1.legend(['Figure ' + str(n_figure)], handlelength=0)
+    n_figure += 1
+    ax1.set_title('Bit Numbers vs Number of attempts')
 
-    ax = fig.add_subplot(111)
-
-    bp = ax.boxplot(plot)
+    fig, ax2 = plt.subplots(1, 1)
+    ax2.boxplot(plot2, labels=bits, vert=True)
+    ax2.legend(['Figure ' + str(n_figure)], handlelength=0)
+    n_figure += 1
+    ax2.set_title('Bit Numbers vs Time')
 
     plt.show()
 
 
+# FIM PERGUNTA 2
+
+# INICIO PERGUNTA 3
 def evaluation(testing, target):
-    splitted = list(target)
+    target = list(target)
     testing = list(testing)
     correct = 0
-    x = 0
 
-    while x < len(splitted):
-        if splitted[x] == testing[x]:
+    for x in range(len(target)):
+        if target[x] == testing[x]:
             correct += 1
-        x += 1
 
-    proximity = len(splitted) - correct
-    return proximity
+    return correct / len(target)
 
+
+def remove_wrong(testing, target):
+    target = list(target)
+    testing = list(testing)
+
+    for x in range(len(target)):
+        if testing[x] != target[x]:
+            testing[x] = None
+
+    return testing
+
+
+def new_guess():
+    bits = [8, 16, 32, 64, 128, 256]
+
+    runtimes = [[] for _ in range(len(bits))]
+    attempts = [[] for _ in range(len(bits))]
+
+    for x in range(30):
+
+        for y in bits:
+            start_time = time.time()
+            target = generate(y)
+            testing = generate(y)
+            numb_tent_current = 0
+            while evaluation(target, testing) < 1:
+                numb_tent_current += 1
+                removed_wrong = remove_wrong(testing, target)
+                for t in range(len(removed_wrong)):
+                    if removed_wrong[t] is None:
+                        removed_wrong[t] = str(rand.randint(0, 1))
+
+                testing = "".join(removed_wrong)
+
+            attempts[bits.index(y)].append(numb_tent_current)
+            runtimes[bits.index(y)].append(time.time() - start_time)
+
+    make_graph(attempts, runtimes, bits)
+
+
+# FIM PERGUNTA 3
 
 def rule_evaluation(testing):
     rule_test = list(testing)
@@ -118,183 +156,171 @@ def rule_evaluation(testing):
         x += 1
 
 
-def mutation(target, mutate):
+# INICIO PERGUNTA 4(2)
+def mutation(mutate):
     for_mutation = list(mutate)
-    the_best = list(target)
-    best_score = 0
-    best = []
-    x = 0
+    random_spot = rand.randint(0, len(for_mutation) - 1)
 
-    while x < 1000:
-        random_spot = rand.randint(0, len(for_mutation) - 1)
-        for_mutation[random_spot] = rand.randint(0, 1)
-        check = evaluation("".join(list(map(str, for_mutation))), "".join(list(map(str, the_best))))
-        if check > best_score:
-            best_score = check
-            best = for_mutation
+    if for_mutation[random_spot] == '1':
+        for_mutation[random_spot] = "0"
 
-        if check == best_score:
-            print(check)
-            print(best_score)
-            print("".join(list(map(str, for_mutation))))
-            return "BEST FOUND!!"
+    else:
+        for_mutation[random_spot] = "1"
 
-        x += 1
-
-    return "".join(list(map(str, for_mutation)))
+    return "".join(for_mutation)
 
 
-def new_mutation(target, mutate):
-    for_mutation = list(mutate)
-    the_best = list(target)
-    best_score = 0
-    best = []
-    x = 0
+def final_mutation():
+    bits = [8, 16, 32, 64, 128, 256]
 
-    random = rand.randint(0, len(for_mutation) - 1)
-    for_mutation[random] = rand.randint(0, 1)
-    check = evaluation("".join(list(map(str, for_mutation))), "".join(list(map(str, the_best))))
-    if check > best_score:
-        best_score = check
-    if check == best_score:
-        return "BEST FOUND!!"
+    runtimes = [[] for _ in range(len(bits))]
+    attempts = [[] for _ in range(len(bits))]
 
-    x += 1
+    for t in range(30):
+        for x in bits:
+            start_time = time.time()
+            target = generate(x)
+            testing = generate(x)
+            num_tent = 0
 
-    return "".join(list(map(str, for_mutation)))
+            for y in range(1000):
+                num_tent += 1
+                if evaluation(target, testing) == 1:
+                    break
 
+                mid_test = mutation(testing)
 
-def population(target, size):
-    populate = []
-    best_list = []
-    next_gen = []
-    x = 0
-    y = 0
+                if evaluation(target, mid_test) > evaluation(target, testing):
+                    testing = mid_test
 
-    while x < 100:
-        populate.append(generate_random(size))
-        x += 1
+            attempts[bits.index(x)].append(num_tent)
+            runtimes[bits.index(x)].append(time.time() - start_time)
 
-    best_list = sortGeneration(populate, target)
-
-    while y < 30:
-        dummy = best_list.pop(y)
-        next_gen.append(dummy)
-        y += 1
-
-    return next_gen
+    make_graph(attempts, runtimes, bits)
 
 
-def population_with_mutation(mutate, target):
-    mutated_population = []
+# FIM PERGUNTA 4 2
 
-    for x in mutate:
-        if len(mutate) == 100:
-            break
-        else:
-            in_mutation = rand.choice(mutate)
-            mutated = mutation(target, in_mutation)
-            if mutated == "BEST FOUND!!":
-                return "STOP"
-            else:
-                mutated_population.append(mutated)
-
-    return mutated_population
-
-
-def crossover(generation):
-    next_gen = []
-    counter = 0
-
-    while counter < len(generation) - 1:
-        pick_father = generation[counter]
-        pick_mother = generation[counter + 1]
-
-        breakdown_mom = list(pick_mother)
-        breakdown_dad = list(pick_father)
-
-        son_1 = []
-        son_2 = []
-
-        t = 0
-
-        while t < len(breakdown_dad):
-            if t < (len(breakdown_dad) / 2):
-                son_1.append(breakdown_dad[t])
-                son_2.append(breakdown_mom[t])
-
-            if t >= (len(breakdown_dad) / 2):
-                son_2.append(breakdown_dad[t])
-                son_1.append(breakdown_mom[t])
-
-            t += 1
-
-        next_gen.append("".join(list(map(str, son_1))))
-        next_gen.append("".join(list(map(str, son_2))))
-
-        counter += 1
-
-    return next_gen
-
+# PERGUNTA 5
 
 def sortGeneration(generation, target):
     return sorted(generation, key=partial(evaluation, target=target))
 
 
-def checkIFFOUND(target, generation):
-    for x in generation:
-        if x == target:
-            print(x)
-            return "STOP"
+def mutated_pop():
+    bits = [8, 16, 32, 64, 128, 256]
+    limit_stagnation = 10
 
-    return 0
+    runtimes = [[] for _ in range(len(bits))]
+    attempts = [[] for _ in range(len(bits))]
+
+    for t in range(30):
+
+        for x in bits:
+            start_time = time.time()
+            target = generate(x)
+            population = []
+            best_pop = []
+
+            best_ev = 0
+            times_equal = 0
+            nr_generations = 0
+
+            for _ in range(100):
+                population.append(generate(x))
+
+            population = sortGeneration(population, target)
+
+            while times_equal < limit_stagnation:
+                nr_generations += 1
+                best_pop = population[:30]
+
+                if evaluation(best_pop[0], target) == best_ev:
+                    times_equal += 1
+                else:
+                    times_equal = 0
+
+                best_ev = evaluation(best_pop[0], target)
+
+                while len(best_pop) < 100:
+                    spot = rand.choice(best_pop)
+                    mutated = mutation(spot)
+                    best_pop.append(mutated)
+
+                population = sortGeneration(best_pop, target)
+
+            attempts[bits.index(x)].append(nr_generations)
+            runtimes[bits.index(x)].append(time.time() - start_time)
+
+    make_graph(attempts, runtimes, bits)
 
 
-def generation_mutation():
-    time_2 = 0
-    time_1 = time.process_time()
-    target = generate(64)
-    print(target)
-    next_gen = population(target, 64)
-    stop = ""
+# FIM PERGUNTA 5
 
-    num_generations = 0
+# inicio pergunta 6
 
-    while stop != "STOP":
-        num_generations += 1
-        mutated = population_with_mutation(next_gen, target)
-        if mutated == "STOP":
-            stop = "STOP"
-            print("stop")
-            time_2 = time.process_time()
-        else:
-            next_gen = population_with_mutation(mutated, target)
+def new_crossover(father, mother):
+    split = rand.randint(0, len(father))
 
-    print(num_generations)
-    print("TIME:   " + str(time_2 - time_1))
+    part_father = father[:split]
+    part_mother = mother[split:]
+
+    return part_father + part_mother
+
 
 def crossoverITALL():
-    target = generate(16)
-    print(target)
-    next_gen = population(target, 16)
-    stop = ""
+    bits = [8, 16, 32, 64, 128, 256]
+    limit_stagnation = 10
 
-    num_generations12 = 0
+    runtimes = [[] for _ in range(len(bits))]
+    attempts = [[] for _ in range(len(bits))]
 
-    while stop != "STOP":
-        num_generations12 += 1
-        sorted = sortGeneration(next_gen, target)
-        print("MELHOR DA GERAÇÃO " + str(num_generations12) + ":  " + sorted[0] + "\n")
-        print("SEGUNDO MELHOR DA GERAÇÃO " + str(num_generations12) + ":  " + sorted[1] + "\n")
-        test = checkIFFOUND(target, sorted)
-        crossover12 = crossover(sorted)
-        if test == "STOP":
-            stop = "STOP"
-            print("stop")
-        else:
-            next_gen = crossover(crossover12)
+    for t in range(30):
 
-    print(num_generations12)
+        for x in bits:
+            start_time = time.time()
+            target = generate(x)
+            population = []
+            best_pop = []
+
+            best_ev = 0
+            times_equal = 0
+            nr_generations = 0
+
+            for _ in range(100):
+                population.append(generate(x))
+
+            population = sortGeneration(population, target)
+
+            while times_equal < limit_stagnation:
+                nr_generations += 1
+                best_pop = population[:30]
+
+                if evaluation(best_pop[0], target) == best_ev:
+                    times_equal += 1
+                else:
+                    times_equal = 0
+
+                best_ev = evaluation(best_pop[0], target)
+
+                while len(best_pop) < 100:
+                    spot_dad = rand.choice(best_pop)
+                    spot_mom = rand.choice(best_pop)
+                    son = new_crossover(spot_dad, spot_mom)
+                    best_pop.append(son)
+
+                population = sortGeneration(best_pop, target)
+
+            attempts[bits.index(x)].append(nr_generations)
+            runtimes[bits.index(x)].append(time.time() - start_time)
+
+    make_graph(attempts, runtimes, bits)
 
 
+# fim pergunta 6
+
+new_start()
+new_guess()
+final_mutation()
+mutated_pop()
 crossoverITALL()
